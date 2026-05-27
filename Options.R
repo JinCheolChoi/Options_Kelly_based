@@ -5,13 +5,14 @@
 #********************
 rm(list=ls())
 
+library(data.table)
 Loss_cut_price_determinator=function(Capital,
                                      Strike_price,
                                      Delta,
                                      Filled_price, # Bid (=Premium price)
                                      Profit_price, # Filled_price > Profit_price
                                      N_of_contracts,
-                                     Adjusting_parameter){ # 0 <= Adjusting_parameter <=1 to adjust the kelly
+                                     Adjusting_parameter){ # 0 <= Adjusting_parameter <=1 to adjust the kelly; not working now
   
   #***********
   # pre-errors
@@ -47,9 +48,10 @@ Loss_cut_price_determinator=function(Capital,
   # p>=loss_cut/c+(q*loss_cut)/profit
   # p>=loss_cut*(1/c+q/profit)
   # p/(1/c+q/profit)>=loss_cut # however, the raw kelly is risky, so we'll consider an adjusting parameter, ap.
-  # p/(1/(c*ap)+q/profit)>=loss_cut # final form, (b)
+  # p/(1/c+q/profit)>=loss_cut # final form, (b)
   
   # Capital=100000
+  # Strike_price=100
   # Delta=0.3
   # Filled_price=1.5
   # Profit_price=0.5
@@ -71,8 +73,8 @@ Loss_cut_price_determinator=function(Capital,
   # loss_cut=n*(Loss_cut_price-Filled_price)*100
   
   # Since profit and loss_cut are associated as follows, either can be determined from the other
-  # p/(1/(c*ap)+q/profit)>=loss_cut # (b)
-  Threshold=p/(1/(c*ap)+q/profit)
+  # p/(1/c+q/profit)>=loss_cut # (b)
+  Threshold=p/(1/c+q/profit)
   # -> Threshold>=loss_cut
   # -> Threshold>=n*(Loss_cut_price-Filled_price)*100
   Loss_cut_price=floor((Threshold/(n*100)+Filled_price)*100)/100
@@ -94,7 +96,7 @@ Loss_cut_price_determinator=function(Capital,
   out_list=list(
     Margin=Margin,
     
-    kelly=(p-(q*loss_cut)/profit)*ap,
+    kelly=(p-(q*loss_cut)/profit),
     
     input=data.table(
       Capital=Capital,
@@ -122,10 +124,10 @@ Output_list=
     Capital=100000,
     Strike_price=100,
     Delta=0.2,
-    Filled_price=2.5,
+    Filled_price=3.5,
     Profit_price=1,
-    N_of_contracts=4,
-    Adjusting_parameter=0.5
+    N_of_contracts=5,
+    Adjusting_parameter=1
   )
 Output_list
 
@@ -134,6 +136,6 @@ p=(1-Output_list$input$Delta)
 q=1-p
 loss_cut=Output_list$output$loss_cut
 profit=Output_list$output$profit
-kelly=p-(q*loss_cut)/profit
+kelly=Output_list$kelly
 
-kelly*Output_list$input$Capital*Output_list$input$Adjusting_parameter
+kelly*Output_list$input$Capital
