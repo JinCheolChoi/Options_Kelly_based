@@ -23,7 +23,7 @@ Loss_cut_price_determinator=function(Capital,
   # }
   
   # excess of margin 
-  Margin=Strike_price*N_of_contracts*100*0.45
+  Margin=Strike_price*N_of_contracts*100*0.75
   if(Margin>Capital){
     stop(paste0("The estimated Margin > Capital\n  Maximum contract N = ", floor(Capital/(Strike_price*100*0.45))))
   }
@@ -158,15 +158,16 @@ Loss_cut_price_determinator=function(Capital,
 # test
 Output_list=
   Loss_cut_price_determinator(
-    Capital=30000,
-    Strike_price=62,
-    Delta=0.486,
-    Filled_price=3.67,
+    Capital=110800,
+    Strike_price=7,
+    Delta=0.306,
+    Filled_price=2.21,
     Profit_price=0,
-    N_of_contracts=5,
+    N_of_contracts=10,
     Adjusting_parameter=1
   )
 Output_list
+
 
 # double-check
 p=(1-Output_list$input$Delta)
