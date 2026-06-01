@@ -17,10 +17,10 @@ Loss_cut_price_determinator=function(Capital,
   #***********
   # pre-errors
   # Adjusting_parameter
-  if(any(Adjusting_parameter<0,
-         Adjusting_parameter>1)){
-    stop("Adjusting_parameter must be between 0 and 1")
-  }
+  # if(any(Adjusting_parameter<0,
+  #        Adjusting_parameter>1)){
+  #   stop("Adjusting_parameter must be between 0 and 1")
+  # }
   
   # excess of margin 
   Margin=Strike_price*N_of_contracts*100*0.45
@@ -56,7 +56,7 @@ Loss_cut_price_determinator=function(Capital,
   # Filled_price=1.5
   # Profit_price=0.5
   # N_of_contracts=10
-  # Adjusting_parameter=1
+  # Adjusting_parameter=0.5
   
   # variables
   p=1-Delta
@@ -77,26 +77,61 @@ Loss_cut_price_determinator=function(Capital,
   Threshold=p/(1/c+q/profit)
   # -> Threshold>=loss_cut
   # -> Threshold>=n*(Loss_cut_price-Filled_price)*100
-  Loss_cut_price=floor((Threshold/(n*100)+Filled_price)*100)/100
-  
-  #***********
-  # post-errors
-  # Loss_cut_price < Filled_price
-  if(Loss_cut_price < Filled_price){
-    stop("The estimated Loss_cut_price < Filled_price\nIt must be Loss_cut_price > Filled_price")
-  }
+  # (floor) Loss_cut_price=floor((Threshold/(n*100)+Filled_price)*100)/100
+  Loss_cut_price=Threshold/(n*100)+Filled_price
   
   # loss_cut
   loss_cut=n*(Loss_cut_price-Filled_price)*100
-  if(loss_cut>Capital){
-    stop("loss_cut > Capital\n")
+  
+  # adjusted_applied_kelly
+  adjusted_applied_kelly=(p-(q*loss_cut)/profit)*ap
+  
+  # ap_loss_cut
+  # -> adjusted_applied_kelly=ap_loss_cut/c
+  # -> ap_loss_cut=adjusted_applied_kelly*c
+  ap_loss_cut=adjusted_applied_kelly*c
+  
+  # ap_Loss_cut_price
+  # ap_loss_cut=n*(ap_Loss_cut_price-Filled_price)*100
+  # -> ap_Loss_cut_price=ap_loss_cut/(100*n)+Filled_price
+  # (floor) ap_Loss_cut_price=floor((ap_loss_cut/(100*n)+Filled_price)*100)/100
+  ap_Loss_cut_price=(ap_loss_cut/(100*n)+Filled_price)
+  
+  # ap_loss_cut
+  ap_loss_cut=n*(ap_Loss_cut_price-Filled_price)*100
+  
+  # adjusted_theoretical_kelly
+  # adjusted_theoretical_kelly != adjusted_applied_kelly
+  # adjusted_theoretical_kelly is an actual adjusted kelly
+  # adjusted_theoretical_kelly must be larger than adjusted_applied_kelly ( adjusted_theoretical_kelly > adjusted_applied_kelly )
+  adjusted_theoretical_kelly=p-(q*ap_loss_cut)/profit
+  
+  #***********
+  # post-errors
+  # ap_Loss_cut_price < Filled_price
+  if(ap_Loss_cut_price < Filled_price){
+    stop("The estimated ap_Loss_cut_price < Filled_price\nIt must be ap_Loss_cut_price > Filled_price")
+  }
+  
+  # ap_loss_cut
+  if(ap_loss_cut > Capital){
+    stop("ap_loss_cut > Capital\n")
+  }
+  
+  # adjusted_theoretical_kelly
+  if(round(adjusted_theoretical_kelly, 8) < round(adjusted_applied_kelly, 8)){
+    stop("adjusted_theoretical_kelly < adjusted_applied_kelly\n")
   }
   
   # out_list
   out_list=list(
     Margin=Margin,
     
-    kelly=(p-(q*loss_cut)/profit),
+    # kelly=(p-(q*loss_cut)/profit),
+    adjusted_theoretical_kelly=adjusted_theoretical_kelly,
+    
+    # adjusted_applied_kelly
+    adjusted_applied_kelly=adjusted_applied_kelly,
     
     input=data.table(
       Capital=Capital,
@@ -110,8 +145,10 @@ Loss_cut_price_determinator=function(Capital,
     
     output=data.table(
       profit=n*(Filled_price-Profit_price)*100,
-      loss_cut=loss_cut,
-      Loss_cut_price=Loss_cut_price
+      # loss_cut=loss_cut,
+      # Loss_cut_price=Loss_cut_price
+      loss_cut=ap_loss_cut,
+      Loss_cut_price=ap_Loss_cut_price
     )
   )
   
@@ -122,12 +159,12 @@ Loss_cut_price_determinator=function(Capital,
 Output_list=
   Loss_cut_price_determinator(
     Capital=100000,
-    Strike_price=100,
-    Delta=0.2,
-    Filled_price=3.5,
-    Profit_price=1,
+    Strike_price=62,
+    Delta=0.486,
+    Filled_price=3.67,
+    Profit_price=2,
     N_of_contracts=5,
-    Adjusting_parameter=1
+    Adjusting_parameter=0.5
   )
 Output_list
 
@@ -136,6 +173,9 @@ p=(1-Output_list$input$Delta)
 q=1-p
 loss_cut=Output_list$output$loss_cut
 profit=Output_list$output$profit
-kelly=Output_list$kelly
+kelly=Output_list$adjusted_applied_kelly
 
 kelly*Output_list$input$Capital
+
+Output_list$output$Loss_cut_price-Output_list$input$Filled_price
+Output_list$input$Filled_price-Output_list$input$Profit_price
