@@ -158,13 +158,13 @@ Loss_cut_price_determinator=function(Capital,
 # test
 Output_list=
   Loss_cut_price_determinator(
-    Capital=100000,
+    Capital=30000,
     Strike_price=62,
     Delta=0.486,
     Filled_price=3.67,
-    Profit_price=2,
+    Profit_price=0,
     N_of_contracts=5,
-    Adjusting_parameter=0.5
+    Adjusting_parameter=1
   )
 Output_list
 
